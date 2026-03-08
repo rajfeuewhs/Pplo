@@ -11,4 +11,5 @@ def get_subscribers(channel_id):
             return data["items"][0]["statistics"]["subscriberCount"]
         return "0"
     except Exception:
-        return "Updating..."
+        return "..."
+        
