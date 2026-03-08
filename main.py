@@ -6,8 +6,8 @@ from flask import Flask
 from youtube_api import get_subscribers
 
 # Aapki Details
-[span_5](start_span)CHANNEL_ID = "UCr5ik3Qjslqnl6DB8XwJxDg"[span_5](end_span)
-[span_6](start_span)STREAM_KEY = "77cs-jw6x-yfeu-m2ks-82d6"[span_6](end_span)
+CHANNEL_ID = "UCr5ik3Qjslqnl6DB8XwJxDg"
+STREAM_KEY = "77cs-jw6x-yfeu-m2ks-82d6"
 
 app = Flask(__name__)
 
@@ -26,10 +26,8 @@ def update_label_file():
         time.sleep(15)
 
 def run_ffmpeg():
-    # Sahi YouTube URL (Standard)
-    [span_7](start_span)rtmp_url = f"rtmp://a.rtmp.youtube.com/live2/{STREAM_KEY}"[span_7](end_span)
+    rtmp_url = f"rtmp://a.rtmp.youtube.com/live2/{STREAM_KEY}"
     
-    # Vertical (Shorts) Command
     command = [
         "ffmpeg",
         "-re",
@@ -52,4 +50,3 @@ if __name__ == "__main__":
     
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
-    
