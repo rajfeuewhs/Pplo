@@ -10,6 +10,5 @@ def get_subscribers(channel_id):
         if "items" in data and len(data["items"]) > 0:
             return data["items"][0]["statistics"]["subscriberCount"]
         return "0"
-    except Exception:
+    except:
         return "..."
-        
