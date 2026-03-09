@@ -14,23 +14,24 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "<h1>Pro Text Stream: ACTIVE</h1>"
+    return "<h1>Professional Counter Stream: ACTIVE</h1>"
 
 def update_label():
     while True:
         try:
             subs = get_subscribers(CHANNEL_ID)
-            with open("label.txt", "w") as f:
-                f.write(f" LIVE SUBS: {subs} | GOAL: {50} ")
-        except Exception as e:
-            print(f"Update Error: {e}")
+            # Sirf number save karenge taaki design clean rahe
+            with open("subs.txt", "w") as f:
+                f.write(str(subs))
+        except:
+            pass
         time.sleep(15)
 
 def run_ffmpeg():
-    # Direct IP address if DNS fails
+    # Direct IP for stability
     rtmp_url = f"rtmp://199.223.232.122/live2/{STREAM_KEY}"
     
-    # Static Image Input (Best for Render 24/7)
+    # Static Image (bg.jpg)
     bg_input = "-f lavfi -i color=c=purple:s=720x1280:r=15"
     if os.path.exists("bg.jpg"):
         bg_input = "-loop 1 -i bg.jpg"
@@ -41,23 +42,30 @@ def run_ffmpeg():
         "-f", "lavfi", "-i", "anullsrc",
         "-vf", (
             "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,"
-            # TEXT IMPROVEMENT: Big Font (120) + Black Shadow (Glow)
-            "drawtext=reload=1:textfile=label.txt:fontcolor=white:fontsize=120:"
-            "x=(w-text_w)/2:y=(h-text_h)/2:box=1:boxcolor=black@0.5:boxborderw=25"
+            # BOX BACKGROUND: Center mein ek halka black box taaki text chamke
+            "drawbox=y=(h-400)/2:w=w:h=400:color=black@0.4:t=fill,"
+            # 1. TOP LABEL (Yellow)
+            "drawtext=text='LIVE SUBSCRIBERS':fontcolor=yellow:fontsize=50:x=(w-text_w)/2:y=(h-text_h)/2-120,"
+            # 2. MAIN COUNT (Bada White Number)
+            "drawtext=reload=1:textfile=subs.txt:fontcolor=white:fontsize=180:x=(w-text_w)/2:y=(h-text_h)/2,"
+            # 3. BOTTOM GOAL (Cyan)
+            f"drawtext=text='TARGET GOAL\: {SUB_GOAL}':fontcolor=cyan:fontsize=45:x=(w-text_w)/2:y=(h-text_h)/2+130"
         ),
         "-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency",
         "-g", "30", "-b:v", "2000k", "-pix_fmt", "yuv420p",
         "-c:a", "aac", "-b:a", "128k", "-f", "flv", 
-        # TLR Verify false to fix rtmps issues
         "-tls_verify", "0",
         rtmp_url
     ]
-    subprocess.run(command)
+    
+    while True:
+        subprocess.run(command)
+        time.sleep(5)
 
 if __name__ == "__main__":
-    if not os.path.exists("label.txt"):
-        with open("label.txt", "w") as f:
-            f.write("Fetching Subs...")
+    if not os.path.exists("subs.txt"):
+        with open("subs.txt", "w") as f:
+            f.write("0")
     threading.Thread(target=update_label, daemon=True).start()
     threading.Thread(target=run_ffmpeg, daemon=True).start()
     port = int(os.environ.get("PORT", 5000))
