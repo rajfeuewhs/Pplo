@@ -1,42 +1,29 @@
 import subprocess
 import time
-import threading
 import os
-from flask import Flask
 from youtube_api import get_subscribers
 
-# Details
 CHANNEL_ID = "UCr5ik3Qjslqnl6DB8XwJxDg"
-STREAM_KEY = os.getenv("STREAM_KEY", "77cs-jw6x-yfeu-m2ks-82d6") 
-SUB_GOAL = 50 
+STREAM_KEY = os.getenv("STREAM_KEY")
+SUB_GOAL = 50
 
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return "<h1>Render Anti-Block Stream: ACTIVE</h1>"
-
-def update_label():
-    while True:
+def run_ffmpeg():
+    # GitHub ka network fast hai, direct RTMP bilkul sahi chalega
+    rtmp_url = f"rtmp://a.rtmp.youtube.com/live2/{STREAM_KEY}"
+    
+    # Label file setup
+    def update_text():
         try:
             subs = get_subscribers(CHANNEL_ID)
             with open("subs.txt", "w") as f:
                 f.write(str(subs))
         except:
             pass
-        time.sleep(30)
 
-def run_ffmpeg():
-    # RTMPS (Secure Port 443) use kar rahe hain bypass ke liye
-    rtmps_url = f"rtmps://a.rtmps.youtube.com:443/live2/{STREAM_KEY}"
-    
-    bg_input = "-f lavfi -i color=c=purple:s=720x1280:r=5"
-    if os.path.exists("bg.jpg"):
-        bg_input = "-loop 1 -i bg.jpg"
+    update_text() # Initial fetch
 
     command = [
-        "ffmpeg", "-re",
-        *bg_input.split(),
+        "ffmpeg", "-re", "-loop", "1", "-i", "bg.jpg",
         "-f", "lavfi", "-i", "anullsrc",
         "-vf", (
             "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,"
@@ -45,22 +32,20 @@ def run_ffmpeg():
             "drawtext=reload=1:textfile=subs.txt:fontcolor=white:fontsize=180:x=(w-text_w)/2:y=(h-text_h)/2,"
             f"drawtext=text='TARGET GOAL\: {SUB_GOAL}':fontcolor=cyan:fontsize=45:x=(w-text_w)/2:y=(h-text_h)/2+130"
         ),
-        "-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency",
-        "-r", "5", "-g", "10", "-b:v", "500k", "-pix_fmt", "yuv420p", 
-        "-c:a", "aac", "-f", "flv", 
-        rtmps_url
+        "-c:v", "libx264", "-preset", "ultrafast", "-b:v", "2500k",
+        "-pix_fmt", "yuv420p", "-c:a", "aac", "-f", "flv", rtmp_url
     ]
     
-    while True:
-        print("--- Connecting via Port 443 (Secure) ---")
-        subprocess.run(command)
-        time.sleep(5)
+    # background thread to update sub count every 30s
+    def timer_task():
+        while True:
+            time.sleep(30)
+            update_text()
+            
+    import threading
+    threading.Thread(target=timer_task, daemon=True).start()
+    
+    subprocess.run(command)
 
 if __name__ == "__main__":
-    if not os.path.exists("subs.txt"):
-        with open("subs.txt", "w") as f:
-            f.write("0")
-    threading.Thread(target=update_label, daemon=True).start()
-    threading.Thread(target=run_ffmpeg, daemon=True).start()
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    run_ffmpeg()
