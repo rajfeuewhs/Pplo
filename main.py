@@ -7,32 +7,30 @@ from youtube_api import get_subscribers
 
 # Details
 CHANNEL_ID = "UCr5ik3Qjslqnl6DB8XwJxDg"
-STREAM_KEY = os.getenv("STREAM_KEY") 
+STREAM_KEY = os.getenv("STREAM_KEY", "77cs-jw6x-yfeu-m2ks-82d6") 
 SUB_GOAL = 50 
 
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "<h1>Professional Counter Stream: ACTIVE</h1>"
+    return "<h1>Render Anti-Block Stream: ACTIVE</h1>"
 
 def update_label():
     while True:
         try:
             subs = get_subscribers(CHANNEL_ID)
-            # Sirf number save karenge taaki design clean rahe
             with open("subs.txt", "w") as f:
                 f.write(str(subs))
         except:
             pass
-        time.sleep(15)
+        time.sleep(30)
 
 def run_ffmpeg():
-    # Direct IP for stability
-    rtmp_url = f"rtmp://199.223.232.122/live2/{STREAM_KEY}"
+    # RTMPS (Secure Port 443) use kar rahe hain bypass ke liye
+    rtmps_url = f"rtmps://a.rtmps.youtube.com:443/live2/{STREAM_KEY}"
     
-    # Static Image (bg.jpg)
-    bg_input = "-f lavfi -i color=c=purple:s=720x1280:r=15"
+    bg_input = "-f lavfi -i color=c=purple:s=720x1280:r=5"
     if os.path.exists("bg.jpg"):
         bg_input = "-loop 1 -i bg.jpg"
 
@@ -42,23 +40,19 @@ def run_ffmpeg():
         "-f", "lavfi", "-i", "anullsrc",
         "-vf", (
             "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,"
-            # BOX BACKGROUND: Center mein ek halka black box taaki text chamke
             "drawbox=y=(h-400)/2:w=w:h=400:color=black@0.4:t=fill,"
-            # 1. TOP LABEL (Yellow)
             "drawtext=text='LIVE SUBSCRIBERS':fontcolor=yellow:fontsize=50:x=(w-text_w)/2:y=(h-text_h)/2-120,"
-            # 2. MAIN COUNT (Bada White Number)
             "drawtext=reload=1:textfile=subs.txt:fontcolor=white:fontsize=180:x=(w-text_w)/2:y=(h-text_h)/2,"
-            # 3. BOTTOM GOAL (Cyan)
             f"drawtext=text='TARGET GOAL\: {SUB_GOAL}':fontcolor=cyan:fontsize=45:x=(w-text_w)/2:y=(h-text_h)/2+130"
         ),
         "-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency",
-        "-g", "30", "-b:v", "2000k", "-pix_fmt", "yuv420p",
-        "-c:a", "aac", "-b:a", "128k", "-f", "flv", 
-        "-tls_verify", "0",
-        rtmp_url
+        "-r", "5", "-g", "10", "-b:v", "500k", "-pix_fmt", "yuv420p", 
+        "-c:a", "aac", "-f", "flv", 
+        rtmps_url
     ]
     
     while True:
+        print("--- Connecting via Port 443 (Secure) ---")
         subprocess.run(command)
         time.sleep(5)
 
