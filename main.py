@@ -21,7 +21,7 @@ def update_label():
         try:
             subs = get_subscribers(CHANNEL_ID)
             with open("label.txt", "w") as f:
-                f.write(f" LIVE SUBS: {subs} | GOAL: {SUB_GOAL} ")
+                f.write(f" LIVE SUBS: {subs} | GOAL: {50} ")
         except Exception as e:
             print(f"Update Error: {e}")
         time.sleep(15)
