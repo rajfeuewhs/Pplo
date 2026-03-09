@@ -1,0 +1,32 @@
+name: 24-7 Live Stream
+on:
+  schedule:
+    - cron: '0 */6 * * *' # Har 6 ghante mein auto-restart
+  workflow_dispatch: # Manual start button ke liye
+
+jobs:
+  stream:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install FFmpeg & Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install Requests
+        run: pip install requests
+
+      - name: Start Streaming
+        env:
+          STREAM_KEY: ${{ secrets.STREAM_KEY }}
+        run: |
+          # 5h 50m baad workflow band hoga aur cron use restart kar dega
+          timeout 5h 50m python main.py || true
